@@ -76,3 +76,42 @@ const router = new Router({
 })
 
 ```
+
+### 权限控制
+1. ~~~当前登录的用户只能查看他自己的用户信息，也只有他和管理员能修改他的信息~~~
+可能不需要，因为用户登陆后才能获取token 
+
+2. 修改密码等登录信息后需要前端清除本地token让用户重新登陆
+
+3. 现在先只做APP端，不做管理端
+
+4. 统一错误处理
+
+### 疑问
+如果每一个需要token 验证的接口都加上token验证，还需要下面的代码吗
+```js
+const jwt = require('koa-jwt')
+app.use((ctx, next) => {
+  return next().catch(err => {
+    if (err.status === 401) {
+      const error={
+        status:401,
+        message:'token已过期!,请重新登录'
+      }
+      ctx.body=error
+    } else {
+      throw err
+    }
+  })
+})
+
+app.use(
+  jwt({
+    secret: config.jwtTokenSecret,
+  }).unless({
+    path: whitelist,
+  }),
+)
+```
+
+

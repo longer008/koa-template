@@ -2,30 +2,38 @@ const User = require('../model/user.model')
 const config = require('../config')
 const md5 = require('md5')
 // const jsonToken = require('jsonwebtoken')
-const Jwt=require('../middlewares/jwt')
+const Jwt = require('../middlewares/jwt')
 const { handleSuccess, handleError } = require('../middlewares/handle')
+const { logger } = require('../middlewares/logger')
 
-const verifyToken=async ctx=>{
+// token 验证
+const verifyToken = async ctx => {
+  const error = {
+    status: 401,
+    message: 'token已过期!,请重新登录',
+  }
+  let flag = true
   try {
-    let token = ctx.request.headers["authorization"].split(' ')[1];
+    let token = ctx.request.headers['authorization'].split(' ')[1]
     if (!token) {
-      ctx.response.status=401
-      ctx.response.message="token已过期！，请重新登录"
-      return false
+      ctx.body = error
+      ctx.status=401
+      flag = false
     }
-    let result=new Jwt(token).verifyToken()
-    console.log(result);
-    if (result=='err') {
-      ctx.response.status=401
-      ctx.response.message="token已过期！，请重新登录"
-      return false
+    let result = new Jwt(token).verifyToken()
+    if (result == 'err') {
+      ctx.body = error
+      ctx.status=401
+      flag = false
     }
-  } catch (error) {
-    ctx.response.status=401
-    ctx.response.message="token已过期！，请重新登录"
-    return false
+  } catch (err) {
+    ctx.body = error
+    ctx.status=401
+    flag = false
   }
   
+  flag?logger.fatal("token验证通过！"):logger.error("token验证失败！")
+  return flag
 }
 
 const UserController = {
@@ -36,7 +44,7 @@ const UserController = {
     await User.findByUsername(username)
       .then(async res => {
         if (res.length > 0) {
-          handleError({ ctx, message: '用户已存在,注册失败' })
+          handleError({ ctx, error: '用户已存在,注册失败' })
         } else {
           await User.register([
             username,
@@ -46,18 +54,18 @@ const UserController = {
           ])
             .then(res => {
               if (res.affectedRows > 0) {
-                handleSuccess({ ctx, result: '注册成功', message: '注册成功' })
+                handleSuccess({ ctx, result: '注册成功' })
               } else {
-                handleError({ ctx, message: '注册失败' })
+                handleError({ ctx, error: '注册失败' })
               }
             })
-            .catch(err => {
-              handleError({ ctx, message: '注册失败', err })
+            .catch(error => {
+              handleError({ ctx, error })
             })
         }
       })
       .catch(err => {
-        handleError({ ctx, message: '注册失败', err })
+        handleError({ ctx,error:err })
       })
   },
 
@@ -67,62 +75,67 @@ const UserController = {
     await User.login([username])
       .then(res => {
         if (res[0].password === md5(config.pwdSalt + password)) {
-          let tokenData=
-          {
+          let tokenData = {
             id: res[0].id,
             username: res[0].username,
             password: res[0].password,
           }
-          let token=new Jwt(tokenData).generateToken()
+          let token = new Jwt(tokenData).generateToken()
           let data = {
             id: res[0].id,
             username: res[0].username,
             nickname: res[0].nickname,
-            token: token
+            token: token,
           }
-          handleSuccess({ ctx, result: data, message: '登录成功' })
+          handleSuccess({ ctx, result: data })
         } else {
-          handleError({ ctx, message: '密码错误' })
+          handleError({ ctx, error: '密码错误' })
         }
       })
       .catch(err => {
-        handleError({ ctx, message: '登录失败', err })
+        handleError({ ctx, error:err })
       })
   },
 
   // 获取用户信息
   getUserInfo: async ctx => {
     let { username } = ctx.query
-    try {
-      let tokenValid=await verifyToken(ctx)
-      if (!tokenValid) {
-        return false
-      }
-    } catch (error) {
-      ctx.response.status=401
-      ctx.response.message="token已过期！，请重新登录"
+
+    let tokenValid = await verifyToken(ctx)
+    if (!tokenValid) {
       return false
     }
-    
+
     await User.getUserInfo(username)
       .then(async res => {
         if (res[0]) {
           if (res[0]['avatar']) {
-            res[0]['avatar']="http://"+config.host+":"+config.port+res[0]['avatar']+""
+            res[0]['avatar'] =
+              'http://' +
+              config.host +
+              ':' +
+              config.port +
+              res[0]['avatar'] +
+              ''
           }
-          handleSuccess({ ctx, result: res[0], message: '获取用户信息成功' })
+          handleSuccess({ ctx, result: res[0] })
         } else {
-          handleError({ ctx, result: res[0], message: '当前用户不存在' })
+          handleError({ ctx, error: res[0] })
         }
       })
       .catch(err => {
-        handleError({ ctx, result: err, message: '获取用户信息出错了' })
+        handleError({ ctx, error: err })
       })
   },
 
   // 更新用户信息
   updateUserInfo: async ctx => {
-    let { nickname, avatar, sex, born,  province, city,person_describe, id } = ctx.request.body
+    let tokenValid = await verifyToken(ctx)
+    if (!tokenValid) {
+      return false
+    }
+    let { nickname, avatar, sex, born, province, city, person_describe, id } =
+      ctx.request.body
     await User.updateUserInfo([
       nickname,
       avatar,
@@ -135,29 +148,41 @@ const UserController = {
     ])
       .then(res => {
         if (res.affectedRows > 0) {
-          handleSuccess({ ctx, result: [], message: '用户信息更新成功' })
+          handleSuccess({ ctx, result: '用户信息更新成功' })
         } else {
-          handleError({ ctx, result: '', message: '信息更新失败' })
+          handleError({ ctx, error: '用户信息更新失败' })
         }
       })
       .catch(err => {
-        handleError({ ctx, result: err, message: '更新用户信息出错了' })
+        handleError({ ctx, error: err })
       })
   },
 
   //   修改密码
   updatePwd: async ctx => {
+    let tokenValid = await verifyToken(ctx)
+    if (!tokenValid) {
+      return false
+    }
     let { id, newPwd, oldPwd } = ctx.request.body
-    await User.findByUsername([username])
+    await User.findById([id])
       .then(async verifyPwd => {
-        // if (verifyPwd[0].password == md5(config.User.pwdSalt + oldpass)) {
-        if (verifyPwd[0].password == oldpass) {
+        if (verifyPwd[0].password == md5(config.pwdSalt + oldPwd)) {
+          await User.updatePwd([md5(config.pwdSalt + newPwd),id]).then(async res=>{
+            if (res.affectedRows > 0) {
+              handleSuccess({ ctx, result: '密码修改成功' })
+            } else {
+              handleError({ ctx, error: '密码修改失败' })
+            }
+          }).catch(err=>{
+            handleError({ ctx, error:err })
+          })
         } else {
-          handleError({ ctx, result: '', message: '原密码错误！' })
+          handleError({ ctx, error: '原密码错误！' })
         }
       })
       .catch(verifyPwdErr => {
-        handleError({ ctx, result: verifyPwdErr, message: '出错了' })
+        handleError({ ctx, error: verifyPwdErr })
       })
   },
 }

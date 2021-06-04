@@ -23,6 +23,11 @@ const User = {
     let _sql = `select id, username, password, nickname from user where username="${params}";`
     return query(_sql, params)
   },
+  //通过id查找
+  findById(params) {
+    let _sql = `select id, username, password, nickname from user where id="${params}";`
+    return query(_sql, params)
+  },
   // 获取用户信息
   getUserInfo(params) {
     let _sql = `select  id, username, nickname, phone,sex,born,avatar,province,city,person_describe from user where username="${params}";`
@@ -34,7 +39,7 @@ const User = {
     return query(_sql, params)
   },
   updatePwd(params){
-    let _sql = `update user set  password=? where id=?;`
+    let _sql = `update user set password=? where id=?;`
     return query(_sql, params)
   }
 }

@@ -186,5 +186,6 @@ router.get(prefix+'/getUserInfo', controller.user.getUserInfo) // 获取用户�
  *               example: true
  */
 router.put(prefix+'/updateUserInfo', controller.user.updateUserInfo) // 修改用户信息
+router.put(prefix+'/updatePwd', controller.user.updatePwd) // 修改密码
 
 module.exports = router

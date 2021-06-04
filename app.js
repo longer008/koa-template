@@ -49,8 +49,12 @@ app.use(async (ctx, next) => {
 app.use((ctx, next) => {
   return next().catch(err => {
     if (err.status === 401) {
-      ctx.status = 401
-      ctx.body = 'token已过期！，请重新登录'
+      const error={
+        status:401,
+        message:'token已过期!,请重新登录'
+      }
+      ctx.body=error
+      ctx.status=401
     } else {
       throw err
     }

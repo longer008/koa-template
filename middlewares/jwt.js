@@ -25,8 +25,6 @@ class Jwt {
     let res
     try {
       let result = jwt.verify(token, config.jwtTokenSecret) || {}
-      console.log("校验token:");
-      console.log(result);
       let { exp = 0 } = result,
         current = Math.floor(Date.now() / 1000)
       if (current <= exp) {
