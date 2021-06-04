@@ -97,7 +97,6 @@ if (config.swagger) {
 // Router
 app.use(router.routes(), router.allowedMethods())
 
-// Response
 // app.use(responseHandler)
 
 const server = app.listen(config.port, config.host, () => {
