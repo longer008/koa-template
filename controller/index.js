@@ -1,5 +1,6 @@
 'use strict'
 
+const {logger}=require('../middlewares/logger')
 const fs = require('fs')
 
 const files = fs.readdirSync(__dirname).filter(file => file !== 'index.js')
@@ -11,5 +12,7 @@ for (const file of files) {
     controllers[`${file.replace(/\.controller\.js/, '')}`] = controller
   }
 }
+
+logger.fatal(controllers);
 
 module.exports = controllers

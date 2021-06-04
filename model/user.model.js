@@ -25,7 +25,7 @@ const User = {
   },
   // 获取用户信息
   getUserInfo(params) {
-    let _sql = `select  id, username, nickname, phone,sex,born,province,city,person_describe from user where username="${params}";`
+    let _sql = `select  id, username, nickname, phone,sex,born,avatar,province,city,person_describe from user where username="${params}";`
     return query(_sql, params)
   },
   // 更新用户信息

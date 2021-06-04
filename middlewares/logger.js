@@ -26,9 +26,9 @@ log4js.configure({
 const logger = log4js.getLogger('[Default]')
 
 const loggerMiddleware = async (ctx, next) => {
-  const start = new Date()
+  const start = Date.now()
   await next()
-  const ms = new Date() - start
+  const ms = Date.now() - start
 
   const remoteAddress = ctx.headers['x-forwarded-for'] || ctx.ip || ctx.ips ||
     (ctx.socket && (ctx.socket.remoteAddress || (ctx.socket.socket && ctx.socket.socket.remoteAddress)))

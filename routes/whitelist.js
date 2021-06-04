@@ -1,6 +1,8 @@
 
 const whitelist = [
     /\//,
+    /public/,
+    /images/,
     /login/,
     /register/,
     /getArticleListAll/,

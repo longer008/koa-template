@@ -28,3 +28,51 @@ swagger坑太多了
 })`这样是不可以的
 
 swagger.js 中options 配置 apis时，注意是 `['./routes/*.js']` 这里最容易出错
+
+
+be careful:
+路由的方法一定要和jsdoc的一致
+
+
+使用get请求时:注意获取参数的时候在jsdoc ->parameters 设置 `in：query`
+
+
+
+头像静态文件  koa-static
+
+注意post/put 填写表单有多个参数时 consumes ，一般别加吧
+就算设置为 ` consumes:[application/json,application x-www-form-urlencoded]`,好像也只有`application/json`生效，会导致
+`invalid JSON, only supports object and array`这个错误，
+如果不设置这个参数一切正常
+
+Content-Type---consumes 代表发送端（客户端|服务器）发送的实体数据的数据类型。 
+Accept----produces 希望服务器响应发送回来的的数据类型
+
+
+暂时移出swagger，直接修改 `app.js`
+```js
++ const router = require('./routes');
+- const swagger = require('./util/swagger')
+```
+
+移除
+```js
+const { koaSwagger } = require('koa2-swagger-ui')
+app.use(
+  koaSwagger({
+    routePrefix: '/swagger',
+    swaggerOptions: {
+      url: '/swagger.json',
+    },
+  }),
+)
+
+```
+
+在routes中添加api前缀
+```js
+const router = new Router({
++    prefix: config.rootPath,
+})
+
+```

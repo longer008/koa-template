@@ -1,19 +1,26 @@
 const Koa = require('koa')
+const path = require('path')
 const { koaSwagger } = require('koa2-swagger-ui')
 const bodyParser = require('koa-bodyparser')
 const cors = require('koa2-cors')
 const jwt = require('koa-jwt')
+// 引入 koa-static
+const staticFiles = require('koa-static')
 const config = require('./config')
-// const router = require('./routes');
-const swagger = require('./util/swagger')
+let router=require('./routes')
+
 const whitelist = require('./routes/whitelist')
 const { errorHandler, responseHandler } = require('./middlewares/response')
 const { corsHandler } = require('./middlewares/cors')
 
+const {logger,loggerMiddleware}=require('./middlewares/logger')
+
 const app = new Koa()
+// 指定 public目录为静态资源目录，用来存放 js css images 等
+app.use(staticFiles(path.resolve(__dirname, './public')))
 
 // Error Handler
-app.use(errorHandler)
+// app.use(errorHandler)
 app.use(async (ctx, next) => {
   // 拦截器
   const allowedOrigins = []
@@ -37,6 +44,7 @@ app.use(async (ctx, next) => {
   await next()
 })
 
+
 // token错误处理
 app.use((ctx, next) => {
   return next().catch(err => {
@@ -48,39 +56,48 @@ app.use((ctx, next) => {
     }
   })
 })
+
 app.use(
   jwt({
-    secret: config.secret,
+    secret: config.jwtTokenSecret,
   }).unless({
     path: whitelist,
   }),
 )
 // Cors
 app.use(cors(corsHandler))
-// Helmet
+
 app.use(bodyParser())
+
+// logger
 app.use(async (ctx, next) => {
-  console.log(`${ctx.request.method} ${ctx.request.url}`)
-  await next()
+  await loggerMiddleware(ctx,next)
+  // console.log(`${ctx.request.method} ${ctx.request.url}`)
+  // await next()
 })
 
-app.use(
-  koaSwagger({
-    routePrefix: '/swagger',
-    swaggerOptions: {
-      url: '/swagger.json',
-    },
-  }),
-)
 
-swagger.get('/',(ctx)=>{
-    ctx.body="hello"
-})
+// swagger
+if (config.swagger) {
+  router = require('./util/swagger')
+  app.use(
+    koaSwagger({
+      routePrefix: '/swagger',
+      swaggerOptions: {
+        url: '/swagger.json',
+      },
+    }),
+  )
+}
+
 // Router
-app.use(swagger.routes(), swagger.allowedMethods())
+app.use(router.routes(), router.allowedMethods())
 
 // Response
-app.use(responseHandler)
-app.listen(3000, () => {
-  console.log('打开浏览器查看：http://localhost:3000')
+// app.use(responseHandler)
+
+const server = app.listen(config.port, config.host, () => {
+  const host = server.address().address
+  const port = server.address().port
+  logger.warn('应用已启动，访问地址为 http://%s:%s', host, port)
 })

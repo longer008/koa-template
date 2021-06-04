@@ -1,8 +1,32 @@
 const User = require('../model/user.model')
 const config = require('../config')
 const md5 = require('md5')
-const jsonToken = require('jsonwebtoken')
+// const jsonToken = require('jsonwebtoken')
+const Jwt=require('../middlewares/jwt')
 const { handleSuccess, handleError } = require('../middlewares/handle')
+
+const verifyToken=async ctx=>{
+  try {
+    let token = ctx.request.headers["authorization"].split(' ')[1];
+    if (!token) {
+      ctx.response.status=401
+      ctx.response.message="token已过期！，请重新登录"
+      return false
+    }
+    let result=new Jwt(token).verifyToken()
+    console.log(result);
+    if (result=='err') {
+      ctx.response.status=401
+      ctx.response.message="token已过期！，请重新登录"
+      return false
+    }
+  } catch (error) {
+    ctx.response.status=401
+    ctx.response.message="token已过期！，请重新登录"
+    return false
+  }
+  
+}
 
 const UserController = {
   // 注册
@@ -43,21 +67,18 @@ const UserController = {
     await User.login([username])
       .then(res => {
         if (res[0].password === md5(config.pwdSalt + password)) {
+          let tokenData=
+          {
+            id: res[0].id,
+            username: res[0].username,
+            password: res[0].password,
+          }
+          let token=new Jwt(tokenData).generateToken()
           let data = {
             id: res[0].id,
             username: res[0].username,
             nickname: res[0].nickname,
-            token: jsonToken.sign(
-              {
-                data: {
-                  id: res[0].id,
-                  username: res[0].username,
-                  password: res[0].password,
-                },
-                exp: Math.floor(Date.now() / 1000) + 60 * 60 * 6, //6小时过期
-              },
-              config.jwtTokenSecret,
-            ),
+            token: token
           }
           handleSuccess({ ctx, result: data, message: '登录成功' })
         } else {
@@ -71,10 +92,24 @@ const UserController = {
 
   // 获取用户信息
   getUserInfo: async ctx => {
-    let { username } = ctx.request.body
+    let { username } = ctx.query
+    try {
+      let tokenValid=await verifyToken(ctx)
+      if (!tokenValid) {
+        return false
+      }
+    } catch (error) {
+      ctx.response.status=401
+      ctx.response.message="token已过期！，请重新登录"
+      return false
+    }
+    
     await User.getUserInfo(username)
       .then(async res => {
         if (res[0]) {
+          if (res[0]['avatar']) {
+            res[0]['avatar']="http://"+config.host+":"+config.port+res[0]['avatar']+""
+          }
           handleSuccess({ ctx, result: res[0], message: '获取用户信息成功' })
         } else {
           handleError({ ctx, result: res[0], message: '当前用户不存在' })
@@ -86,23 +121,21 @@ const UserController = {
   },
 
   // 更新用户信息
-  updateUser: async ctx => {
-    // let { nickname, avatar, sex, born, address, province, city, id } =
-    //   ctx.request.body
-
-    // await User.updateUserInfo([username, md5(config.User.pwdSalt +password), nickname, avatar, signature, id]).then(res => {
+  updateUserInfo: async ctx => {
+    let { nickname, avatar, sex, born,  province, city,person_describe, id } = ctx.request.body
     await User.updateUserInfo([
-        ...ctx.request.body
-    //   username,
-    //   password,
-    //   nickname,
-    //   avatar,
-    //   signature,
-    //   id,
+      nickname,
+      avatar,
+      sex,
+      born,
+      province,
+      city,
+      person_describe,
+      id,
     ])
       .then(res => {
         if (res.affectedRows > 0) {
-          handleSuccess({ ctx, result: '', message: '信息更新成功' })
+          handleSuccess({ ctx, result: [], message: '用户信息更新成功' })
         } else {
           handleError({ ctx, result: '', message: '信息更新失败' })
         }
