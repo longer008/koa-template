@@ -1,40 +1,8 @@
 const User = require('../model/user.model')
 const config = require('../config')
 const md5 = require('md5')
-// const jsonToken = require('jsonwebtoken')
-const Jwt = require('../middlewares/jwt')
+const {generateToken,verifyToken} = require('../middlewares/jwt')
 const { handleSuccess, handleError } = require('../middlewares/handle')
-const { logger } = require('../middlewares/logger')
-
-// token 验证
-const verifyToken = async ctx => {
-  const error = {
-    status: 401,
-    message: 'token已过期!,请重新登录',
-  }
-  let flag = true
-  try {
-    let token = ctx.request.headers['authorization'].split(' ')[1]
-    if (!token) {
-      ctx.body = error
-      ctx.status=401
-      flag = false
-    }
-    let result = new Jwt(token).verifyToken()
-    if (result == 'err') {
-      ctx.body = error
-      ctx.status=401
-      flag = false
-    }
-  } catch (err) {
-    ctx.body = error
-    ctx.status=401
-    flag = false
-  }
-  
-  flag?logger.fatal("token验证通过！"):logger.error("token验证失败！")
-  return flag
-}
 
 const UserController = {
   // 注册
@@ -80,7 +48,7 @@ const UserController = {
             username: res[0].username,
             password: res[0].password,
           }
-          let token = new Jwt(tokenData).generateToken()
+          let token = generateToken(tokenData)
           let data = {
             id: res[0].id,
             username: res[0].username,
