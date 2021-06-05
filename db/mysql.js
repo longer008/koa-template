@@ -29,36 +29,34 @@
 
 // export default sequelize;
 
-
-var mysql = require('mysql2');
+var mysql = require('mysql2')
 var config = require('../config')
 var pool = mysql.createPool({
-    host: config.mysql.host,
-    user: config.mysql.username,
-    password: config.mysql.password,
-    database: config.mysql.database,
-    port: config.mysql.port,
-    charset : 'utf8mb4'
-});
+  host: config.mysql.host,
+  user: config.mysql.username,
+  password: config.mysql.password + '',
+  database: config.mysql.database,
+  port: config.mysql.port,
+  charset: 'utf8mb4',
+})
 
 let query = (sql, values) => {
-
-    return new Promise((resolve, reject) => {
-        pool.getConnection((err, connection) => {
-            if (err) {
-                reject(err)
-            } else {
-                connection.query(sql, values, (err, rows) => {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(rows)
-                    }
-                    connection.release()
-                })
-            }
+  return new Promise((resolve, reject) => {
+    pool.getConnection((err, connection) => {
+      if (err) {
+        reject(err)
+      } else {
+        connection.query(sql, values, (err, rows) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(rows)
+          }
+          connection.release()
         })
+      }
     })
+  })
 }
 
 module.exports = query

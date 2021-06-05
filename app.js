@@ -10,7 +10,7 @@ const config = require('./config')
 let router=require('./routes')
 
 const whitelist = require('./routes/whitelist')
-const { errorHandler, responseHandler } = require('./middlewares/response')
+// const { errorHandler, responseHandler } = require('./middlewares/response')
 const { corsHandler } = require('./middlewares/cors')
 
 const {logger,loggerMiddleware}=require('./middlewares/logger')
@@ -104,3 +104,27 @@ const server = app.listen(config.port, config.host, () => {
   const port = server.address().port
   logger.warn('应用已启动，访问地址为 http://%s:%s', host, port)
 })
+
+/***
+ *                    _ooOoo_
+ *                   o8888888o
+ *                   88" . "88
+ *                   (| -_- |)
+ *                    O\ = /O
+ *                ____/`---'\____
+ *              .   ' \\| |// `.
+ *               / \\||| : |||// \
+ *             / _||||| -:- |||||- \
+ *               | | \\\ - /// | |
+ *             | \_| ''\---/'' | |
+ *              \ .-\__ `-` ___/-. /
+ *           ___`. .' /--.--\ `. . __
+ *        ."" '< `.___\_<|>_/___.' >'"".
+ *       | | : `- \`.;`\ _ /`;.`/ - ` : | |
+ *         \ \ `-. \_ __\ /__ _/ .-` / /
+ * ======`-.____`-.___\_____/___.-`____.-'======
+ *                    `=---='
+ *
+ * .............................................
+ *          佛祖保佑             永无BUG
+ */

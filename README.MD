@@ -77,6 +77,25 @@ const router = new Router({
 
 ```
 
+
+添加 yargs 命令行输入隐私信息
+internal/crypto/hash.js:82
+    throw new ERR_INVALID_ARG_TYPE('data',
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received type number
+
+解决办法：
+```js
+var pool = mysql.createPool({
+    host: config.mysql.host,
+    user: config.mysql.username,
++    password: config.mysql.password+"",
+    database: config.mysql.database,
+    port: config.mysql.port,
+    charset : 'utf8mb4'
+});
+```
+
 ### 权限控制
 1. ~~~当前登录的用户只能查看他自己的用户信息，也只有他和管理员能修改他的信息~~~
 可能不需要，因为用户登陆后才能获取token 

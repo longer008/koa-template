@@ -1,4 +1,7 @@
 const path = require('path')
+const yargs = require('yargs/yargs')
+const { hideBin } = require('yargs/helpers')
+const argv = yargs(hideBin(process.argv)).argv
 
 module.exports = {
   rootPath: '/api',
@@ -15,14 +18,16 @@ module.exports = {
   publicDir: path.resolve(__dirname, '../public'),
   logPath: path.resolve(__dirname, '../logs/koa-template.log'),
   mysql: {
-    database: 'toutiao',
-    username: 'root',
-    password: '123456',
+    database: argv.database,
+    username: argv.username,
+    password: argv.password,
     host: '127.0.0.1',
     port: 3306,
   },
   info: {
     name: 'koa-template',
+    desc:'koa后端模板代码',
+    version:'1.0.0'
   },
   
 }
